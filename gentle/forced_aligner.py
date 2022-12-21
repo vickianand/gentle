@@ -11,6 +11,7 @@ class ForcedAligner():
     def __init__(self, resources, transcript, nthreads=4, **kwargs):
         self.kwargs = kwargs
         self.nthreads = nthreads
+        # transcript += "Nice to meet you. Where are you from? What do you do? What do you like to do (in your free time)? What is your phone number? Do you have Facebook? Basic English Phrases for Anywhere."
         self.transcript = transcript
         self.resources = resources
         self.ms = metasentence.MetaSentence(transcript, resources.vocab)
@@ -21,6 +22,7 @@ class ForcedAligner():
 
     def transcribe(self, wavfile, progress_cb=None, logging=None):
         words, duration = self.mtt.transcribe(wavfile, progress_cb=progress_cb)
+        kaldi_word_count = len(words)
 
         # Clear queue (would this be gc'ed?)
         for i in range(self.nthreads):
@@ -44,7 +46,7 @@ class ForcedAligner():
 
         words = AdjacencyOptimizer(words, duration).optimize()
 
-        return Transcription(words=words, transcript=self.transcript)
+        return Transcription(words=words, transcript=self.transcript, kaldi_word_count=kaldi_word_count)
 
 
 class AdjacencyOptimizer():

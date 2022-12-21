@@ -71,9 +71,10 @@ class Word:
 
 class Transcription:
 
-    def __init__(self, transcript=None, words=None):
+    def __init__(self, transcript=None, words=None, kaldi_word_count=None):
         self.transcript = transcript
         self.words = words
+        self.kaldi_word_count = kaldi_word_count
 
     def __eq__(self, other):
         return self.transcript == other.transcript and self.words == other.words
@@ -92,6 +93,8 @@ class Transcription:
             container['transcript'] = self.transcript
         if self.words: 
             container['words'] = [word.as_dict(without="duration") for word in self.words]
+        if self.kaldi_word_count is not None:
+            container['kaldi_word_count'] = self.kaldi_word_count
         return json.dumps(container, **options)
 
     @classmethod
