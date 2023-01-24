@@ -11,17 +11,24 @@ class ForcedAligner():
     def __init__(self, resources, transcript, nthreads=4, **kwargs):
         self.kwargs = kwargs
         self.nthreads = nthreads
-        # transcript += "Nice to meet you. Where are you from? What do you do? What do you like to do (in your free time)? What is your phone number? Do you have Facebook? Basic English Phrases for Anywhere."
+        common_text = ("Nice to meet you. How are you? Where is she from? \
+            He is coming soon. I ate already. I do not like him. \
+            What is your phone number? I feel good. I hope they have a nice trip. \
+            We will come back later.")
         self.transcript = transcript
         self.resources = resources
-        self.ms = metasentence.MetaSentence(transcript, resources.vocab)
+        self.ms = metasentence.MetaSentence(transcript + common_text, resources.vocab)
+        # self.ms = metasentence.MetaSentence(transcript, resources.vocab)
         ks = self.ms.get_kaldi_sequence()
         gen_hclg_filename = language_model.make_bigram_language_model(ks, resources.proto_langdir, **kwargs)
         self.queue = kaldi_queue.build(resources, hclg_path=gen_hclg_filename, nthreads=nthreads)
         self.mtt = MultiThreadedTranscriber(self.queue, nthreads=nthreads)
+        self.ms = metasentence.MetaSentence(transcript, resources.vocab)
+
 
     def transcribe(self, wavfile, progress_cb=None, logging=None):
         words, duration = self.mtt.transcribe(wavfile, progress_cb=progress_cb)
+        print("kaldi transcript:\n", [w.word for w in words])
         kaldi_word_count = len(words)
 
         # Clear queue (would this be gc'ed?)
@@ -40,6 +47,7 @@ class ForcedAligner():
             progress_cb({'status': 'ALIGNING'})
 
         words = multipass.realign(wavfile, words, self.ms, resources=self.resources, nthreads=self.nthreads, progress_cb=progress_cb)
+        print("after realign:\n", [w.word for w in words])
 
         if logging is not None:
             logging.info("after 2nd pass: %d unaligned words (of %d)" % (len([X for X in words if X.not_found_in_audio()]), len(words)))

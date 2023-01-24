@@ -55,6 +55,7 @@ with gentle.resampled(args.audiofile) as wavfile:
     result = aligner.transcribe(wavfile, progress_cb=on_progress, logging=logging)
 
 fh = open(args.output, 'w', encoding="utf-8") if args.output else sys.stdout
+print("aligned transcript:\n", [w.word for w in result.words])
 fh.write(result.to_json(indent=2))
 if args.output:
     logging.info("output written to %s" % (args.output))
